@@ -7,7 +7,9 @@ import RestaurantDetail from './src/screens/RestaurantDetail';
 import AddFood from './src/screens/AddFood';
 
 const App = () => {
-  return <Navigation />;
+  return <AddFood />;
 };
 
 export default App;
+
+

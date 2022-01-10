@@ -16,37 +16,38 @@ import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import ImagePicker from 'react-native-image-crop-picker';
 import storage from '@react-native-firebase/storage';
 
-
 const AddFood = () => {
-  const foodCollection = firestore().collection('food');
+  const foodCollection = firestore().collection('Foods');
 
   const [food, setFood] = useState('');
   const [about, setAbout] = useState('');
   const [price, setPrice] = useState('');
 
-  const submit = () => {
-    // const uploadUri = image;
-    // let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
+  const submit = async () => {
+    const foodId = Math.floor(10 + Math.random() * 1000).toString();
+    const uploadUri = image;
+    let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
 
-    // setUploading(true);
+    setUploading(true);
+    try {
+      await storage().ref(filename).putFile(uploadUri);
+      setUploading(false);
+      Alert.alert(
+        'Image Uploaded',
+        'Your Image has been uploaded to the Firebase Cloud Storage Successfully!',
+      );
+    } catch (e) {
+      console.log(e);
+    }
 
-    // try {
-    //   await firebase.storage().ref(filename).putFile(uploadUri);
-    //   setUploading(false);
-    //   Alert.alert(
-    //     'Image Uploaded',
-    //     'Your Image has been uploaded to the Firebase Cloud Storage Successfully!',
-    //   );
-    // } catch (e) {
-    //   console.log(e);
-    // }
-
-    // setimage(null);
+    setimage(null);
 
     foodCollection.add({
       name: food,
       about: about,
       price: price,
+      image_url: image,
+      Key: foodId,
     });
   };
 
@@ -55,8 +56,8 @@ const AddFood = () => {
   const [image, setimage] = useState(
     'https://lh5.googleusercontent.com/-b0PKyNuQv5s/AAAAAAAAAAI/AAAAAAAAAAA/AMZuuclxAM4M1SCBGAO7Rp-QP6zgBEUkOQ/s96-c/photo.jpg',
   );
-  // const [uploading, setUploading] = useState(false);
-  // const [transferred, setTransferred] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const [transferred, setTransferred] = useState(0);
 
   const takePhotoFromCamera = () => {
     ImagePicker.openCamera({
