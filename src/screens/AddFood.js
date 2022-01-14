@@ -7,6 +7,7 @@ import {
   ImageBackground,
   TextInput,
   Alert,
+  ActivityIndicator,
 } from 'react-native';
 
 import {useTheme} from 'react-native-paper';
@@ -17,38 +18,71 @@ import ImagePicker from 'react-native-image-crop-picker';
 import storage from '@react-native-firebase/storage';
 
 const AddFood = () => {
-  const foodCollection = firestore().collection('Foods');
+  const foodCollection = firestore().collection('Food');
 
   const [food, setFood] = useState('');
   const [about, setAbout] = useState('');
   const [price, setPrice] = useState('');
+  const [uploading, setUploading] = useState(false);
+  const [transferred, setTransferred] = useState(0);
 
   const submit = async () => {
     const foodId = Math.floor(10 + Math.random() * 1000).toString();
-    const uploadUri = image;
-    let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
-
-    setUploading(true);
-    try {
-      await storage().ref(filename).putFile(uploadUri);
-      setUploading(false);
-      Alert.alert(
-        'Image Uploaded',
-        'Your Image has been uploaded to the Firebase Cloud Storage Successfully!',
-      );
-    } catch (e) {
-      console.log(e);
-    }
-
-    setimage(null);
+    const imageUrl = await uploadImage();
+    console.log('Image url:', imageUrl);
 
     foodCollection.add({
       name: food,
       about: about,
       price: price,
-      image_url: image,
+      image_url: imageUrl,
+      foodTime: firestore.Timestamp.fromDate(new Date()),
       Key: foodId,
     });
+  };
+
+  const uploadImage = async () => {
+    const uploadUri = image;
+    let filename = uploadUri.substring(uploadUri.lastIndexOf('/') + 1);
+
+    const extension = filename.split('.').pop();
+    const name = filename.split('.').slice(0, -1).join('.');
+    filename = name + Date.now() + '.' + extension;
+
+    setUploading(true);
+    setTransferred(0);
+
+    const storageRef = storage().ref(`FoodImage/${filename}`);
+    const task = storageRef.putFile(uploadUri);
+
+    task.on('state_changed', taskSnapshot => {
+      console.log(
+        `${taskSnapshot.bytesTransferred} transferred out of ${taskSnapshot.totalBytes}`,
+      );
+
+      setTransferred(
+        Math.round(taskSnapshot.bytesTransferred / taskSnapshot.totalBytes) *
+          100,
+      );
+    });
+
+    try {
+      await task;
+
+      const url = await storageRef.getDownloadURL();
+
+      setUploading(false);
+      // Alert.alert(
+      //   'Image Uploaded',
+      //   'Your Image has been uploaded to the Firebase Cloud Storage Successfully!',
+      // );
+      return url;
+    } catch (e) {
+      console.log(e);
+      return null;
+    }
+
+    setimage(null);
   };
 
   const {colors} = useTheme();
@@ -56,8 +90,6 @@ const AddFood = () => {
   const [image, setimage] = useState(
     'https://lh5.googleusercontent.com/-b0PKyNuQv5s/AAAAAAAAAAI/AAAAAAAAAAA/AMZuuclxAM4M1SCBGAO7Rp-QP6zgBEUkOQ/s96-c/photo.jpg',
   );
-  const [uploading, setUploading] = useState(false);
-  const [transferred, setTransferred] = useState(0);
 
   const takePhotoFromCamera = () => {
     ImagePicker.openCamera({
@@ -80,17 +112,6 @@ const AddFood = () => {
       setimage(image.path);
     });
   };
-  // const renderInner = () => (
-  //   <Text>hello</Text>
-  // );
-
-  // const renderHeader = () => (
-  //   <View style={styles.header}>
-  //     <View style={styles.panelHeader}>
-  //       <View style={styles.panelHandle} />
-  //     </View>
-  //   </View>
-  // );
 
   return (
     <View style={styles.container}>
@@ -192,9 +213,17 @@ const AddFood = () => {
             ]}
           />
         </View>
-        <TouchableOpacity style={styles.commandButton} onPress={submit}>
-          <Text style={styles.panelButtonTitle}>Submit</Text>
-        </TouchableOpacity>
+
+        {uploading ? (
+          <View style={styles.statusWrapper}>
+            <Text>{transferred} % Completed!</Text>
+            <ActivityIndicator size="large" color="#0000ff" />
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.commandButton} onPress={submit}>
+            <Text style={styles.panelButtonTitle}>Submit</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </View>
   );
@@ -282,5 +311,9 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === 'ios' ? 0 : -12,
     paddingLeft: 10,
     color: '#333333',
+  },
+  statusWrapper: {
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

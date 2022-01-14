@@ -5,11 +5,10 @@ import Navigation from './src/navigation/Navigation';
 import AdminHome from './src/screens/AdminHome';
 import RestaurantDetail from './src/screens/RestaurantDetail';
 import AddFood from './src/screens/AddFood';
+import AdminLogin from './src/screens/AdminLogin';
 
 const App = () => {
-  return <AddFood />;
+  return <Navigation />;
 };
 
 export default App;
-
-

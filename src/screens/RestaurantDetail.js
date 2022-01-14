@@ -10,6 +10,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons'
 function RestaurantDetail({ navigation, route }) {
   // const localRestaurants = route.params;
   const restaurant = route.params;
+  // console.log(restaurant)
    const [count, setcount] = useState(0);
 
     const increment = () => {
@@ -35,7 +36,9 @@ function RestaurantDetail({ navigation, route }) {
       </View>
       <View style={styles.imageConatainer}>
         <Image
-          source={restaurant.image_url}
+          source={{uri: restaurant.image_url}}
+              source={{uri:restaurant.image_url}}
+
           style={{resizeMode: 'contain', flex: 1}}
         />
       </View>
